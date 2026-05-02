@@ -23,6 +23,7 @@ export interface ConductorState {
   showGrid: boolean;
   showIctusMarkers: boolean;
   animation: boolean;
+  ictusPulses: boolean;
   accentLast: boolean;
   palette: PaletteName;
   theme: Theme;
@@ -42,6 +43,7 @@ export interface ConductorState {
   setShowGrid: (b: boolean) => void;
   setShowIctusMarkers: (b: boolean) => void;
   setAnimation: (b: boolean) => void;
+  setIctusPulses: (b: boolean) => void;
   setAccentLast: (b: boolean) => void;
   setPalette: (p: PaletteName) => void;
   setTheme: (t: Theme) => void;
@@ -63,6 +65,7 @@ const DEFAULTS = {
   showGrid: false,
   showIctusMarkers: false,
   animation: true,
+  ictusPulses: false,
   accentLast: false,
   palette: 'Editorial' as PaletteName,
   theme: 'light' as Theme,
@@ -91,6 +94,7 @@ export const useConductorStore = create<ConductorState>()(
       setShowGrid: (showGrid) => set({ showGrid }),
       setShowIctusMarkers: (showIctusMarkers) => set({ showIctusMarkers }),
       setAnimation: (animation) => set({ animation }),
+      setIctusPulses: (ictusPulses) => set({ ictusPulses }),
       setAccentLast: (accentLast) => set({ accentLast }),
       setPalette: (palette) => set({ palette }),
       setTheme: (theme) => set({ theme }),
@@ -120,6 +124,7 @@ export const useConductorStore = create<ConductorState>()(
         showGrid: state.showGrid,
         showIctusMarkers: state.showIctusMarkers,
         animation: state.animation,
+        ictusPulses: state.ictusPulses,
         accentLast: state.accentLast,
         palette: state.palette,
         theme: state.theme,

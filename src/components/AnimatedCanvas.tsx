@@ -1,8 +1,25 @@
 import { useEffect, useRef } from 'react';
 import p5 from 'p5';
 import { PATTERNS } from '../lib/patterns';
-import { buildPath } from '../lib/geometry';
+import { buildPath, transformPoint } from '../lib/geometry';
+import {
+  findIctusArcPositions,
+  ictusCrossingsThisFrame,
+  mapCycleToArc,
+} from '../lib/timing';
+import type { Vec2 } from '../lib/types';
 import { useConductorStore } from '../store/useConductorStore';
+
+const SAMPLE_COUNT = 600;
+const SPINE_BASE: Vec2 = [0, 0.85];
+const ORIGIN: Vec2 = [0, 0];
+const PULSE_LIFE_FRAMES = 36; // ~0.6s at 60fps
+const PULSE_MAX_RADIUS_VB = 0.06; // viewBox units the ring expands to
+
+interface Pulse {
+  ictusIdx: number;
+  age: number; // frames since spawn
+}
 
 function readToken(name: string, fallback: string): string {
   if (typeof window === 'undefined') return fallback;
@@ -12,11 +29,11 @@ function readToken(name: string, fallback: string): string {
 
 export function AnimatedCanvas() {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  // Only mount/unmount p5 when these change. Everything else is read per
+  // frame via store.getState() so dragging sliders doesn't churn p5.
   const animation = useConductorStore((s) => s.animation);
   const signature = useConductorStore((s) => s.signature);
-  const tempo = useConductorStore((s) => s.tempo);
   const articulation = useConductorStore((s) => s.articulation);
-  const strokeWidth = useConductorStore((s) => s.strokeWidth);
   const theme = useConductorStore((s) => s.theme);
 
   useEffect(() => {
@@ -25,16 +42,15 @@ export function AnimatedCanvas() {
     if (!container) return;
 
     const pattern = PATTERNS[signature];
+    // Sample the FULL-LEGATO version of the path so the baton always
+    // travels a smooth curve regardless of articulation. Articulation
+    // affects the static SVG corners, not the conductor's hand path.
     const d = buildPath(
       { ictuses: pattern.ictuses, controls: pattern.controls },
-      articulation,
+      Math.max(articulation, 0.6),
     );
 
-    let samples: { x: number; y: number }[] = [];
-    let totalLength = 0;
-
-    // Sample the path geometry once with a hidden SVG path element. This
-    // avoids re-implementing bezier arc-length math in p5 land.
+    // Sample once via a hidden SVGPathElement — exact arc-length math.
     const svgNS = 'http://www.w3.org/2000/svg';
     const tmpSvg = document.createElementNS(svgNS, 'svg');
     tmpSvg.setAttribute('viewBox', '-1 -1 2 2');
@@ -45,17 +61,19 @@ export function AnimatedCanvas() {
     tmpPath.setAttribute('d', d);
     tmpSvg.appendChild(tmpPath);
     document.body.appendChild(tmpSvg);
-    totalLength = tmpPath.getTotalLength();
-    const SAMPLE_COUNT = 600;
-    samples = Array.from({ length: SAMPLE_COUNT }, (_, i) => {
+    const totalLength = tmpPath.getTotalLength();
+    const samples: Vec2[] = Array.from({ length: SAMPLE_COUNT }, (_, i) => {
       const pt = tmpPath.getPointAtLength((i / (SAMPLE_COUNT - 1)) * totalLength);
-      return { x: pt.x, y: pt.y };
+      return [pt.x, pt.y];
     });
     document.body.removeChild(tmpSvg);
 
-    let paper = readToken('--paper', '#F5F2ED');
-    let ink = readToken('--ink', '#0A0A0A');
+    // Anchor each ictus to its arc-length fraction. Used by the eased
+    // cycle→arc mapping so the baton pauses at every beat.
+    const ictusArcs = findIctusArcPositions(samples, pattern.ictuses);
+
     let cycle = 0;
+    const pulses: Pulse[] = [];
 
     const sketch = (p: p5) => {
       let w = container.clientWidth;
@@ -68,59 +86,107 @@ export function AnimatedCanvas() {
         return [cx + (vx * size) / 2, cy + (vy * size) / 2];
       };
 
+      // Map a viewBox-unit length to screen pixels (size = viewBox 2 → screen size px).
+      const vbToPx = (n: number): number => (n * Math.min(w, h)) / 2;
+
       p.setup = () => {
         const canvas = p.createCanvas(w, h);
         canvas.elt.style.display = 'block';
         p.frameRate(60);
-        p.background(paper);
+        p.background(readToken('--paper', '#F5F2ED'));
       };
 
       p.windowResized = () => {
         w = container.clientWidth;
         h = container.clientHeight;
         p.resizeCanvas(w, h);
-        p.background(paper);
+        p.background(readToken('--paper', '#F5F2ED'));
       };
 
       p.draw = () => {
-        // Re-read tokens each frame so theme changes propagate.
-        paper = readToken('--paper', '#F5F2ED');
-        ink = readToken('--ink', '#0A0A0A');
+        const state = useConductorStore.getState();
+        const iterations = Math.max(1, state.iterations);
+        const spread = state.spread;
+        const scaleAmt = state.scale;
+        const tempo = state.tempo;
+        const strokeWidth = state.strokeWidth;
+        const pivot: Vec2 = state.pivot === 'spineBase' ? SPINE_BASE : ORIGIN;
+        const pulsesEnabled = state.ictusPulses;
+        const accentLast = state.accentLast;
 
-        // Trail fade — draw a translucent paper-color rect over everything.
-        const c = p.color(paper);
-        c.setAlpha(28);
+        const paper = readToken('--paper', '#F5F2ED');
+        const ink = readToken('--ink', '#0A0A0A');
+        const accent = readToken('--accent', '#C73E1D');
+
+        // Trail fade — translucent paper rect.
+        const fade = p.color(paper);
+        fade.setAlpha(34);
         p.noStroke();
-        p.fill(c);
+        p.fill(fade);
         p.rect(0, 0, w, h);
 
-        // Advance parametric t at tempo. One full pattern = pattern.beats.
-        const dt = tempo / 60 / pattern.beats / 60;
-        cycle = (cycle + dt) % 1;
+        // Advance cycle. One full pattern = pattern.beats beats; tempo BPM.
+        const dtPerFrame = tempo / 60 / pattern.beats / 60;
+        const prevCycle = cycle;
+        cycle = (cycle + dtPerFrame) % 1;
 
-        // Window of samples to draw (~last 25% of the cycle).
-        const windowFrac = 0.25;
-        const headIdx = Math.floor(cycle * (samples.length - 1));
-        const tailIdx = Math.max(0, headIdx - Math.floor(windowFrac * samples.length));
+        // Eased arc fraction for this frame.
+        const arcFrac = mapCycleToArc(cycle, ictusArcs);
+        const baseIdx = Math.min(
+          samples.length - 1,
+          Math.max(0, Math.round(arcFrac * (samples.length - 1))),
+        );
+        const baseSample = samples[baseIdx];
 
-        const inkPx = (strokeWidth * Math.min(w, h)) / Math.min(w, h);
-        p.stroke(ink);
-        p.strokeWeight(inkPx * 1.5);
-        p.noFill();
-        p.beginShape();
-        for (let i = tailIdx; i <= headIdx; i++) {
-          const s = samples[i];
-          const [sx, sy] = toScreen(s.x, s.y);
-          p.vertex(sx, sy);
+        // Per-iteration baton tips. Each iteration gets its own theta + sFactor
+        // (matches the spread/scale fan in StaticCanvas), all sweep in unison.
+        const tipPxRadius = Math.max(2, vbToPx(strokeWidth * 0.0035) + 2);
+        for (let i = 0; i < iterations; i++) {
+          const t = iterations === 1 ? 0 : i / (iterations - 1) - 0.5;
+          const theta = t * spread * (Math.PI / 180);
+          const sFactor = 1 + t * scaleAmt;
+          const tipVB = transformPoint(baseSample, theta, sFactor, pivot);
+          const [tx, ty] = toScreen(tipVB[0], tipVB[1]);
+          const isAccent = accentLast && i === iterations - 1;
+          p.noStroke();
+          p.fill(isAccent ? accent : ink);
+          p.circle(tx, ty, tipPxRadius * 2);
         }
-        p.endShape();
 
-        // Baton tip — a small filled dot at the head.
-        const head = samples[headIdx];
-        const [hx, hy] = toScreen(head.x, head.y);
-        p.noStroke();
-        p.fill(ink);
-        p.circle(hx, hy, 6);
+        // Detect ictus crossings for pulse spawning.
+        if (pulsesEnabled) {
+          const hits = ictusCrossingsThisFrame(prevCycle, cycle, ictusArcs.length);
+          for (const idx of hits) {
+            pulses.push({ ictusIdx: idx, age: 0 });
+          }
+        }
+
+        // Render + age pulse rings (stroke-only, on-brand).
+        if (pulses.length > 0) {
+          const ringStroke = p.color(ink);
+          for (let i = pulses.length - 1; i >= 0; i--) {
+            const pulse = pulses[i];
+            const lifeT = pulse.age / PULSE_LIFE_FRAMES;
+            if (lifeT >= 1) {
+              pulses.splice(i, 1);
+              continue;
+            }
+            // Ring grows; alpha fades as cube of remaining life for a soft tail.
+            const radiusVB = lifeT * PULSE_MAX_RADIUS_VB;
+            const alpha = Math.round((1 - lifeT) * (1 - lifeT) * 200);
+            ringStroke.setAlpha(alpha);
+            p.stroke(ringStroke);
+            p.strokeWeight(Math.max(1, vbToPx(strokeWidth * 0.0025)));
+            p.noFill();
+            // Draw the ring at the ictus position of the FIRST iteration only,
+            // transformed by iteration 0's identity (no spread offset). Keeps
+            // the pulse anchored to the canonical pattern reading.
+            const ictusPos = pattern.ictuses[pulse.ictusIdx];
+            const [px, py] = toScreen(ictusPos[0], ictusPos[1]);
+            p.circle(px, py, vbToPx(radiusVB) * 2);
+            pulse.age += 1;
+          }
+        }
       };
     };
 
@@ -129,7 +195,7 @@ export function AnimatedCanvas() {
     return () => {
       instance.remove();
     };
-  }, [animation, signature, tempo, articulation, strokeWidth, theme]);
+  }, [animation, signature, articulation, theme]);
 
   if (!animation) return null;
 

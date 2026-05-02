@@ -277,6 +277,10 @@ export function ControlPanel() {
           <Checkbox checked={s.animation} onChange={s.setAnimation} />
         </div>
         <div className="flex items-center justify-between">
+          <span className={labelClass}>Pulses</span>
+          <Checkbox checked={s.ictusPulses} onChange={s.setIctusPulses} />
+        </div>
+        <div className="flex items-center justify-between">
           <span className={labelClass}>Accent</span>
           <Checkbox checked={s.accentLast} onChange={s.setAccentLast} />
         </div>
