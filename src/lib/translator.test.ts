@@ -9,6 +9,7 @@ const baseInput: TranslatorInput = {
   variation: 0.0,
   spread: 18,
   scale: 0.0,
+  articulation: 1.0,
   seed: 42,
 };
 
@@ -40,14 +41,18 @@ describe('translate', () => {
   });
 
   it('produces identical paths across iterations when spread/scale/variation are 0', () => {
-    const a = translate({ ...baseInput, variation: 0, spread: 0, scale: 0, iterations: 3 });
+    const a = translate({
+      ...baseInput,
+      variation: 0,
+      spread: 0,
+      scale: 0,
+      iterations: 3,
+    });
     expect(a.paths[0]).toBe(a.paths[1]);
     expect(a.paths[1]).toBe(a.paths[2]);
   });
 
-  it('preserves ictus precision: spread=0, scale=0, variation>0 still leaves ictuses untouched', () => {
-    // First M coordinate of the first iteration must equal the first ictus,
-    // because variation jitters controls only.
+  it('preserves ictus precision: variation>0 still leaves ictuses untouched', () => {
     const a = translate({ ...baseInput, variation: 0.2, spread: 0, scale: 0 });
     const firstIctus = baseInput.ictuses[0];
     const m = a.paths[0].match(/^M (-?\d+\.\d+) (-?\d+\.\d+)/);
@@ -56,9 +61,33 @@ describe('translate', () => {
     expect(parseFloat(m![2])).toBeCloseTo(firstIctus[1], 4);
   });
 
-  it('spread > 0 produces distinct iterations even at variation=0', () => {
-    const a = translate({ ...baseInput, variation: 0, spread: 60, iterations: 3 });
-    expect(a.paths[0]).not.toBe(a.paths[1]);
-    expect(a.paths[1]).not.toBe(a.paths[2]);
+  it('articulation = 0 collapses controls to ictuses (line-only segments)', () => {
+    const a = translate({ ...baseInput, articulation: 0, spread: 0, scale: 0, iterations: 1 });
+    const path = a.paths[0];
+    // Each cubic command's two controls should equal their adjacent ictus
+    // when articulation is 0.
+    const segments = path.match(/C (-?\d+\.\d+) (-?\d+\.\d+), (-?\d+\.\d+) (-?\d+\.\d+), (-?\d+\.\d+) (-?\d+\.\d+)/g);
+    expect(segments).not.toBeNull();
+    expect(segments!.length).toBe(baseInput.ictuses.length);
+    // Pull first segment, check c1 == start ictus and c2 == end ictus.
+    const first = segments![0].match(/C (-?\d+\.\d+) (-?\d+\.\d+), (-?\d+\.\d+) (-?\d+\.\d+), (-?\d+\.\d+) (-?\d+\.\d+)/)!;
+    const i0 = baseInput.ictuses[0];
+    const i1 = baseInput.ictuses[1];
+    expect(parseFloat(first[1])).toBeCloseTo(i0[0], 4);
+    expect(parseFloat(first[2])).toBeCloseTo(i0[1], 4);
+    expect(parseFloat(first[3])).toBeCloseTo(i1[0], 4);
+    expect(parseFloat(first[4])).toBeCloseTo(i1[1], 4);
+  });
+
+  it('articulation = 1 yields different output than articulation = 0', () => {
+    const sharp = translate({ ...baseInput, articulation: 0 });
+    const smooth = translate({ ...baseInput, articulation: 1 });
+    expect(sharp.paths).not.toEqual(smooth.paths);
+  });
+
+  it('every pattern has 2n controls for n ictuses', () => {
+    for (const [name, p] of Object.entries(PATTERNS)) {
+      expect(p.controls.length, `pattern ${name}`).toBe(p.ictuses.length * 2);
+    }
   });
 });

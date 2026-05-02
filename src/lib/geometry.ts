@@ -3,27 +3,42 @@ import type { Vec2 } from './types';
 /**
  * Pure geometry utilities. No DOM, no React, no p5.
  *
- * The CONDUCTOR path is built as a closed loop of quadratic Bezier
- * segments. Each segment goes from ictus[i] through control[i] to
- * ictus[(i+1) % n]. Where two segments meet at an ictus they have
- * different tangents, so the ictus reads as a sharp corner — exactly the
- * "scientific" feel we want from a real conducting beat.
+ * The CONDUCTOR path is a closed loop of CUBIC Bezier segments. For n
+ * ictuses there are n segments and 2n controls. controls[2i] is the
+ * outgoing control just after ictuses[i]; controls[2i+1] is the
+ * incoming control just before ictuses[(i+1) mod n].
+ *
+ * Articulation parameter (0..1):
+ *   0 = STACCATO  — controls collapse onto their ictuses, segments become
+ *                   straight lines, ictuses become hard polygon corners
+ *   1 = LEGATO    — controls sit at their full pattern-defined positions,
+ *                   segments are pristine cubic Bezier swoops, ictuses
+ *                   become smooth direction changes
+ *   in between    — linear interpolation between sharp and smooth
  */
 
 const f = (n: number): string => n.toFixed(4);
 
 export interface PathPoints {
   ictuses: Vec2[];
-  controls: Vec2[];
+  controls: Vec2[]; // length === 2 * ictuses.length
 }
 
-export function buildPath({ ictuses, controls }: PathPoints): string {
-  if (ictuses.length < 2 || controls.length !== ictuses.length) return '';
+function lerp2(a: Vec2, b: Vec2, t: number): Vec2 {
+  return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+}
+
+export function buildPath({ ictuses, controls }: PathPoints, articulation = 1): string {
+  const n = ictuses.length;
+  if (n < 2 || controls.length !== 2 * n) return '';
+  const t = Math.max(0, Math.min(1, articulation));
   let d = `M ${f(ictuses[0][0])} ${f(ictuses[0][1])}`;
-  for (let i = 0; i < ictuses.length; i++) {
-    const c = controls[i];
-    const next = ictuses[(i + 1) % ictuses.length];
-    d += ` Q ${f(c[0])} ${f(c[1])}, ${f(next[0])} ${f(next[1])}`;
+  for (let i = 0; i < n; i++) {
+    const start = ictuses[i];
+    const end = ictuses[(i + 1) % n];
+    const c1 = lerp2(start, controls[2 * i], t);
+    const c2 = lerp2(end, controls[2 * i + 1], t);
+    d += ` C ${f(c1[0])} ${f(c1[1])}, ${f(c2[0])} ${f(c2[1])}, ${f(end[0])} ${f(end[1])}`;
   }
   d += ' Z';
   return d;
@@ -43,11 +58,6 @@ export function add2(a: Vec2, b: Vec2): Vec2 {
   return [a[0] + b[0], a[1] + b[1]];
 }
 
-/**
- * Apply rotation then uniform scale around the origin (0,0).
- * The path is centered at (0,0), so this rotates/scales each iteration
- * around the visual center of the composition.
- */
 export function transformPoint(p: Vec2, rotationRad: number, scaleFactor: number): Vec2 {
   return scale2(rotate2(p, rotationRad), scaleFactor);
 }

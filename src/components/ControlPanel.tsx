@@ -120,6 +120,21 @@ export function ControlPanel() {
       </Section>
 
       <Section>
+        <Header title="Articulation" value={s.articulation.toFixed(2)} />
+        <Slider
+          min={0}
+          max={1}
+          step={0.01}
+          value={s.articulation}
+          onChange={s.setArticulation}
+        />
+        <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.12em] text-ink/40">
+          <span>Staccato</span>
+          <span>Legato</span>
+        </div>
+      </Section>
+
+      <Section>
         <Header title="Variation" value={s.variation.toFixed(2)} />
         <Slider min={0} max={0.3} step={0.01} value={s.variation} onChange={s.setVariation} />
       </Section>

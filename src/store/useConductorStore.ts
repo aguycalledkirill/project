@@ -12,6 +12,7 @@ export interface ConductorState {
   variation: number; // 0..1 jitter on Bezier control points (ictuses stay precise)
   spread: number; // total degrees of rotational fan across iterations
   scale: number; // 0..1 fractional scale fan across iterations
+  articulation: number; // 0 staccato (sharp polygon) → 1 legato (smooth bezier)
   strokeWidth: number;
   tempo: number;
   seed: number;
@@ -26,6 +27,7 @@ export interface ConductorState {
   setVariation: (n: number) => void;
   setSpread: (n: number) => void;
   setScale: (n: number) => void;
+  setArticulation: (n: number) => void;
   setStrokeWidth: (n: number) => void;
   setTempo: (n: number) => void;
   setSeed: (n: number) => void;
@@ -46,6 +48,7 @@ export const useConductorStore = create<ConductorState>()(
       variation: 0.0,
       spread: 18,
       scale: 0.0,
+      articulation: 1.0,
       strokeWidth: 1.0,
       tempo: 72,
       seed: 42,
@@ -60,6 +63,7 @@ export const useConductorStore = create<ConductorState>()(
       setVariation: (variation) => set({ variation }),
       setSpread: (spread) => set({ spread }),
       setScale: (scale) => set({ scale }),
+      setArticulation: (articulation) => set({ articulation }),
       setStrokeWidth: (strokeWidth) => set({ strokeWidth }),
       setTempo: (tempo) => set({ tempo }),
       setSeed: (seed) => set({ seed }),
@@ -75,14 +79,15 @@ export const useConductorStore = create<ConductorState>()(
       toggleTheme: () => set({ theme: get().theme === 'light' ? 'dark' : 'light' }),
     }),
     {
-      name: 'conductor:v0.2',
-      version: 2,
+      name: 'conductor:v0.3',
+      version: 3,
       partialize: (state) => ({
         signature: state.signature,
         iterations: state.iterations,
         variation: state.variation,
         spread: state.spread,
         scale: state.scale,
+        articulation: state.articulation,
         strokeWidth: state.strokeWidth,
         tempo: state.tempo,
         seed: state.seed,

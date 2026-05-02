@@ -15,6 +15,7 @@ export function AnimatedCanvas() {
   const animation = useConductorStore((s) => s.animation);
   const signature = useConductorStore((s) => s.signature);
   const tempo = useConductorStore((s) => s.tempo);
+  const articulation = useConductorStore((s) => s.articulation);
   const strokeWidth = useConductorStore((s) => s.strokeWidth);
   const theme = useConductorStore((s) => s.theme);
 
@@ -24,10 +25,13 @@ export function AnimatedCanvas() {
     if (!container) return;
 
     const pattern = PATTERNS[signature];
-    const d = buildPath({
-      ictuses: pattern.ictuses as unknown as [number, number][],
-      controls: pattern.controls as unknown as [number, number][],
-    });
+    const d = buildPath(
+      {
+        ictuses: pattern.ictuses as unknown as [number, number][],
+        controls: pattern.controls as unknown as [number, number][],
+      },
+      articulation,
+    );
 
     let samples: { x: number; y: number }[] = [];
     let totalLength = 0;
@@ -128,7 +132,7 @@ export function AnimatedCanvas() {
     return () => {
       instance.remove();
     };
-  }, [animation, signature, tempo, strokeWidth, theme]);
+  }, [animation, signature, tempo, articulation, strokeWidth, theme]);
 
   if (!animation) return null;
 

@@ -25,6 +25,7 @@ export const StaticCanvas = forwardRef<SVGSVGElement, StaticCanvasProps>(
     const variation = useConductorStore((s) => s.variation);
     const spread = useConductorStore((s) => s.spread);
     const scale = useConductorStore((s) => s.scale);
+    const articulation = useConductorStore((s) => s.articulation);
     const strokeWidth = useConductorStore((s) => s.strokeWidth);
     const seed = useConductorStore((s) => s.seed);
     const aspect = useConductorStore((s) => s.aspect);
@@ -56,9 +57,10 @@ export const StaticCanvas = forwardRef<SVGSVGElement, StaticCanvasProps>(
         variation,
         spread,
         scale,
+        articulation,
         seed,
       });
-    }, [signature, iterations, variation, spread, scale, seed]);
+    }, [signature, iterations, variation, spread, scale, articulation, seed]);
 
     const vbStrokeWidth = (strokeWidth / canvasPx) * 2;
 

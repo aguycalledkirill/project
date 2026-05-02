@@ -4,7 +4,7 @@ import type { BBox, Vec2 } from './types';
 
 /**
  * CONDUCTOR translator — turns a single conducting-pattern geometry
- * (ictuses + Bezier controls) into a stacked Cursor-style vector
+ * (ictuses + cubic-Bezier controls) into a stacked Cursor-style vector
  * composition.
  *
  * HARD CONSTRAINT — DO NOT VIOLATE:
@@ -16,8 +16,7 @@ import type { BBox, Vec2 } from './types';
  *
  * Algorithm — for each iteration `i` in `[0, iterations)`:
  *   1. Seed mulberry32 with `seed * 7919 + i`.
- *   2. Compute a per-iteration ROTATION and SCALE that fans the iterations
- *      across the spread/scale ranges:
+ *   2. Compute per-iteration ROTATION and SCALE:
  *        t       = iterations === 1 ? 0 : (i / (iterations - 1)) - 0.5
  *        theta_i = t * spread * (PI / 180)
  *        s_i     = 1 + t * scale
@@ -26,17 +25,17 @@ import type { BBox, Vec2 } from './types';
  *      Jitter = `variation * 0.1 * [(rand-0.5)*2, (rand-0.5)*2]`.
  *   4. Transform every point (ictus + jittered control) by rotation, then
  *      scale around the origin.
- *   5. Emit a closed-quadratic-Bezier `d` string.
- *
- * Returns paths together with the bbox of all transformed points.
+ *   5. Emit a closed cubic-Bezier `d` string at the requested articulation
+ *      (0 = staccato/polygon, 1 = legato/full curves).
  */
 export interface TranslatorInput {
   ictuses: Vec2[];
-  controls: Vec2[];
+  controls: Vec2[]; // length === 2 * ictuses.length
   iterations: number;
-  variation: number; // 0..1 — jitter on control points (preserves ictus precision)
-  spread: number; // total degrees of rotational fan across iterations
-  scale: number; // 0..1 — total fractional scale fan (e.g. 0.3 = 70%..130%)
+  variation: number;
+  spread: number;
+  scale: number;
+  articulation: number; // 0 staccato (sharp polygon) → 1 legato (smooth bezier)
   seed: number;
 }
 
@@ -49,7 +48,7 @@ const JITTER_SCALE = 0.1;
 const DEG2RAD = Math.PI / 180;
 
 export function translate(input: TranslatorInput): TranslatorOutput {
-  const { ictuses, controls, iterations, variation, spread, scale, seed } = input;
+  const { ictuses, controls, iterations, variation, spread, scale, articulation, seed } = input;
   const paths: string[] = [];
 
   let minX = Infinity;
@@ -84,7 +83,7 @@ export function translate(input: TranslatorInput): TranslatorOutput {
       if (y > maxY) maxY = y;
     }
 
-    paths.push(buildPath({ ictuses: tIctuses, controls: tControls }));
+    paths.push(buildPath({ ictuses: tIctuses, controls: tControls }, articulation));
   }
 
   const bbox: BBox =
