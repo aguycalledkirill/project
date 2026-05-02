@@ -106,17 +106,22 @@ export function ControlPanel() {
 
       <Section>
         <Header title="Iterations" value={String(s.iterations)} />
-        <Slider min={1} max={50} step={1} value={s.iterations} onChange={s.setIterations} />
+        <Slider min={1} max={80} step={1} value={s.iterations} onChange={s.setIterations} />
+      </Section>
+
+      <Section>
+        <Header title="Spread (°)" value={s.spread.toFixed(0)} />
+        <Slider min={0} max={120} step={1} value={s.spread} onChange={s.setSpread} />
+      </Section>
+
+      <Section>
+        <Header title="Scale" value={s.scale.toFixed(2)} />
+        <Slider min={0} max={0.6} step={0.01} value={s.scale} onChange={s.setScale} />
       </Section>
 
       <Section>
         <Header title="Variation" value={s.variation.toFixed(2)} />
         <Slider min={0} max={0.3} step={0.01} value={s.variation} onChange={s.setVariation} />
-      </Section>
-
-      <Section>
-        <Header title="Smoothing" value={s.smoothing.toFixed(2)} />
-        <Slider min={0} max={1} step={0.01} value={s.smoothing} onChange={s.setSmoothing} />
       </Section>
 
       <Section>
@@ -186,6 +191,10 @@ export function ControlPanel() {
         <div className="flex items-center justify-between">
           <span className={labelClass}>Animation</span>
           <Checkbox checked={s.animation} onChange={s.setAnimation} />
+        </div>
+        <div className="flex items-center justify-between">
+          <span className={labelClass}>Accent</span>
+          <Checkbox checked={s.accentLast} onChange={s.setAccentLast} />
         </div>
       </Section>
     </aside>

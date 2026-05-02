@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import p5 from 'p5';
 import { PATTERNS } from '../lib/patterns';
-import { catmullRomToBezier } from '../lib/catmull';
+import { buildPath } from '../lib/geometry';
 import { useConductorStore } from '../store/useConductorStore';
 
 function readToken(name: string, fallback: string): string {
@@ -15,7 +15,6 @@ export function AnimatedCanvas() {
   const animation = useConductorStore((s) => s.animation);
   const signature = useConductorStore((s) => s.signature);
   const tempo = useConductorStore((s) => s.tempo);
-  const smoothing = useConductorStore((s) => s.smoothing);
   const strokeWidth = useConductorStore((s) => s.strokeWidth);
   const theme = useConductorStore((s) => s.theme);
 
@@ -25,10 +24,10 @@ export function AnimatedCanvas() {
     if (!container) return;
 
     const pattern = PATTERNS[signature];
-    const d = catmullRomToBezier(
-      pattern.points as unknown as [number, number][],
-      smoothing,
-    );
+    const d = buildPath({
+      ictuses: pattern.ictuses as unknown as [number, number][],
+      controls: pattern.controls as unknown as [number, number][],
+    });
 
     let samples: { x: number; y: number }[] = [];
     let totalLength = 0;
@@ -129,7 +128,7 @@ export function AnimatedCanvas() {
     return () => {
       instance.remove();
     };
-  }, [animation, signature, tempo, smoothing, strokeWidth, theme]);
+  }, [animation, signature, tempo, strokeWidth, theme]);
 
   if (!animation) return null;
 

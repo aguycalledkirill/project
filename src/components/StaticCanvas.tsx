@@ -23,11 +23,13 @@ export const StaticCanvas = forwardRef<SVGSVGElement, StaticCanvasProps>(
     const signature = useConductorStore((s) => s.signature);
     const iterations = useConductorStore((s) => s.iterations);
     const variation = useConductorStore((s) => s.variation);
-    const smoothing = useConductorStore((s) => s.smoothing);
+    const spread = useConductorStore((s) => s.spread);
+    const scale = useConductorStore((s) => s.scale);
     const strokeWidth = useConductorStore((s) => s.strokeWidth);
     const seed = useConductorStore((s) => s.seed);
     const aspect = useConductorStore((s) => s.aspect);
     const showGrid = useConductorStore((s) => s.showGrid);
+    const accentLast = useConductorStore((s) => s.accentLast);
 
     const wrapperRef = useRef<HTMLDivElement | null>(null);
     const [canvasPx, setCanvasPx] = useState(720);
@@ -45,18 +47,18 @@ export const StaticCanvas = forwardRef<SVGSVGElement, StaticCanvasProps>(
       return () => ro.disconnect();
     }, []);
 
-    const output = useMemo(
-      () =>
-        translate({
-          path: PATTERNS[signature].points as unknown as [number, number][],
-          iterations,
-          variation,
-          smoothing,
-          strokeWidth,
-          seed,
-        }),
-      [signature, iterations, variation, smoothing, strokeWidth, seed],
-    );
+    const output = useMemo(() => {
+      const pattern = PATTERNS[signature];
+      return translate({
+        ictuses: pattern.ictuses as unknown as [number, number][],
+        controls: pattern.controls as unknown as [number, number][],
+        iterations,
+        variation,
+        spread,
+        scale,
+        seed,
+      });
+    }, [signature, iterations, variation, spread, scale, seed]);
 
     const vbStrokeWidth = (strokeWidth / canvasPx) * 2;
 
@@ -98,15 +100,22 @@ export const StaticCanvas = forwardRef<SVGSVGElement, StaticCanvasProps>(
             </g>
           )}
           <g
-            stroke="var(--ink)"
             fill="none"
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={vbStrokeWidth}
           >
-            {output.paths.map((d, i) => (
-              <path key={i} d={d} />
-            ))}
+            {output.paths.map((d, i) => {
+              const isAccent = accentLast && i === output.paths.length - 1;
+              return (
+                <path
+                  key={i}
+                  d={d}
+                  stroke={isAccent ? 'var(--accent)' : 'var(--ink)'}
+                  strokeWidth={isAccent ? vbStrokeWidth * 1.4 : vbStrokeWidth}
+                />
+              );
+            })}
           </g>
         </svg>
       </div>
