@@ -32,6 +32,27 @@ export interface Pattern {
 }
 
 export const PATTERNS = {
+  // 1/4 — "In 1". Single beat per measure (very fast pieces, scherzo,
+  // some waltzes conducted as one). Geometry: a tall, narrow pendulum
+  // with the ictus at the bottom and a clean prep at the top. The
+  // descent and rise are mirrored gentle arcs that read as a single
+  // breath of motion.
+  '1/4': {
+    label: '1/4',
+    description: 'In 1 · Single beat',
+    beats: 1,
+    ictuses: [
+      [0.0, 0.7],
+      [0.0, -0.7],
+    ],
+    controls: [
+      [0.12, 0.4],
+      [0.12, -0.4],
+      [-0.12, -0.4],
+      [-0.12, 0.4],
+    ],
+  },
+
   // 2/4 — duple simple. Down · Up. The right-rebound trait of 2/4 is encoded
   // by both controls of the I1→I2 segment sitting on the right side of the
   // path; the I2→I1 return arc is a smaller leftward bulge.
@@ -93,6 +114,57 @@ export const PATTERNS = {
       [0.4, 0.2],
       [0.7, 0.1],
       [0.35, -0.55],
+      [-0.18, -0.45],
+      [-0.18, 0.4],
+    ],
+  },
+
+  // 5/4 — asymmetric "In 5", grouped 3+2. The first three beats trace a
+  // 4/4-like in/out cross, then beats 4 and 5 form a smaller down-up
+  // pair on the right — the iconic "Take Five" shape: cross plus tail.
+  '5/4': {
+    label: '5/4',
+    description: 'Asymmetric · 3 + 2',
+    beats: 5,
+    ictuses: [
+      [0.0, 0.7],
+      [-0.55, 0.55],
+      [0.55, 0.55],
+      [0.55, 0.1],
+      [0.0, -0.7],
+    ],
+    controls: [
+      [-0.18, 0.7],
+      [-0.45, 0.62],
+      [-0.4, 0.18],
+      [0.4, 0.18],
+      [0.7, 0.42],
+      [0.6, 0.18],
+      [0.5, -0.05],
+      [0.2, -0.55],
+      [-0.18, -0.45],
+      [-0.18, 0.4],
+    ],
+  },
+
+  // 7/8 — asymmetric "In 3", grouped 3+2+2. Triangle skeleton with
+  // beat 1's segment carrying a longer, lazier swing (the three-eighth
+  // pulse), while beats 2 and 3 are tighter, more direct arcs (each
+  // two-eighths). Reads as an off-balance triangle.
+  '7/8': {
+    label: '7/8',
+    description: 'Asymmetric · 3 + 2 + 2',
+    beats: 3,
+    ictuses: [
+      [0.0, 0.7],
+      [0.55, 0.4],
+      [0.0, -0.7],
+    ],
+    controls: [
+      [0.1, 0.78],
+      [0.5, 0.62],
+      [0.7, 0.1],
+      [0.4, -0.5],
       [-0.18, -0.45],
       [-0.18, 0.4],
     ],
@@ -196,4 +268,14 @@ export const PATTERNS = {
 
 export type Signature = keyof typeof PATTERNS;
 
-export const SIGNATURES: Signature[] = ['2/4', '3/4', '4/4', '6/8', '9/8', '12/8'];
+export const SIGNATURES: Signature[] = [
+  '1/4',
+  '2/4',
+  '3/4',
+  '4/4',
+  '5/4',
+  '6/8',
+  '7/8',
+  '9/8',
+  '12/8',
+];
