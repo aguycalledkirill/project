@@ -4,17 +4,22 @@ import { ControlPanel } from './components/ControlPanel';
 import { ExportButton } from './components/ExportButton';
 import { StaticCanvas } from './components/StaticCanvas';
 import { ThemeToggle } from './components/ThemeToggle';
+import { PALETTES } from './lib/palettes';
 import { useConductorStore } from './store/useConductorStore';
 
 export default function App() {
   const theme = useConductorStore((s) => s.theme);
+  const palette = useConductorStore((s) => s.palette);
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    return () => {
-      delete document.documentElement.dataset.theme;
-    };
-  }, [theme]);
+    const root = document.documentElement;
+    root.dataset.theme = theme;
+    const tokens = PALETTES[palette][theme];
+    root.style.setProperty('--paper', tokens.paper);
+    root.style.setProperty('--ink', tokens.ink);
+    root.style.setProperty('--rule', tokens.rule);
+    root.style.setProperty('--accent', tokens.accent);
+  }, [palette, theme]);
 
   return (
     <div className="min-h-screen bg-paper text-ink">
@@ -24,7 +29,7 @@ export default function App() {
             CONDUCTOR
           </h1>
           <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink/50">
-            v0.1
+            v0.4
           </span>
         </div>
         <div className="flex items-center gap-3">

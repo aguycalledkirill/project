@@ -1,9 +1,21 @@
-export function exportSVG(svgEl: SVGSVGElement, filename: string): void {
+export interface ExportOptions {
+  includeGrid?: boolean;
+  includeMarkers?: boolean;
+}
+
+export function exportSVG(
+  svgEl: SVGSVGElement | null,
+  filename: string,
+  opts: ExportOptions = {},
+): boolean {
+  if (!svgEl) return false;
   const clone = svgEl.cloneNode(true) as SVGSVGElement;
   clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
   clone.removeAttribute('id');
 
-  const ink = getComputedStyle(svgEl).getPropertyValue('--ink').trim() || '#0A0A0A';
+  const computed = getComputedStyle(svgEl);
+  const ink = computed.getPropertyValue('--ink').trim() || '#0A0A0A';
+  const accent = computed.getPropertyValue('--accent').trim() || '#C73E1D';
 
   const stripDataAttrs = (el: Element) => {
     for (const attr of Array.from(el.attributes)) {
@@ -11,19 +23,30 @@ export function exportSVG(svgEl: SVGSVGElement, filename: string): void {
     }
   };
 
-  // Strip the grid layer if present in the clone (export should never
-  // bake the scaffolding into the artwork).
-  const grid = clone.querySelector('[data-role="grid"]');
-  if (grid) grid.remove();
+  if (!opts.includeGrid) {
+    clone.querySelector('[data-role="grid"]')?.remove();
+  }
+  if (!opts.includeMarkers) {
+    clone.querySelector('[data-role="markers"]')?.remove();
+  }
 
-  // Inline computed paint so the SVG renders correctly in tools that don't
-  // resolve CSS custom properties (Figma, Illustrator).
-  clone.querySelectorAll('path').forEach((p) => {
-    p.setAttribute('stroke', ink);
-    p.setAttribute('fill', 'none');
-    if (!p.getAttribute('stroke-linecap')) p.setAttribute('stroke-linecap', 'round');
-    if (!p.getAttribute('stroke-linejoin')) p.setAttribute('stroke-linejoin', 'round');
-    stripDataAttrs(p);
+  // Inline computed paint so Figma / Illustrator render correctly without
+  // resolving CSS custom properties. Preserve any explicit accent stroke
+  // by detecting var(--accent) refs.
+  clone.querySelectorAll('path, line, circle').forEach((el) => {
+    const stroke = el.getAttribute('stroke');
+    if (stroke && stroke.includes('--accent')) el.setAttribute('stroke', accent);
+    else if (stroke && stroke.includes('--ink')) el.setAttribute('stroke', ink);
+    else if (!stroke && el.tagName.toLowerCase() === 'path') el.setAttribute('stroke', ink);
+
+    const fill = el.getAttribute('fill');
+    if (fill && fill.includes('--ink')) el.setAttribute('fill', ink);
+
+    if (el.tagName.toLowerCase() === 'path') {
+      if (!el.getAttribute('fill')) el.setAttribute('fill', 'none');
+      if (!el.getAttribute('stroke-linecap')) el.setAttribute('stroke-linecap', 'round');
+      if (!el.getAttribute('stroke-linejoin')) el.setAttribute('stroke-linejoin', 'round');
+    }
   });
 
   stripDataAttrs(clone);
@@ -39,6 +62,7 @@ export function exportSVG(svgEl: SVGSVGElement, filename: string): void {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+  return true;
 }
 
 export function exportFilename(signature: string, aspect: string, seed: number): string {

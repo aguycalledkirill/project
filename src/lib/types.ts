@@ -1,4 +1,4 @@
-export type Vec2 = [number, number];
+export type Vec2 = readonly [number, number];
 
 export interface BBox {
   x: number;

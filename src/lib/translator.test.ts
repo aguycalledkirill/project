@@ -3,8 +3,8 @@ import { PATTERNS } from './patterns';
 import { translate, type TranslatorInput } from './translator';
 
 const baseInput: TranslatorInput = {
-  ictuses: PATTERNS['4/4'].ictuses as unknown as [number, number][],
-  controls: PATTERNS['4/4'].controls as unknown as [number, number][],
+  ictuses: PATTERNS['4/4'].ictuses,
+  controls: PATTERNS['4/4'].controls,
   iterations: 12,
   variation: 0.0,
   spread: 18,
@@ -64,13 +64,14 @@ describe('translate', () => {
   it('articulation = 0 collapses controls to ictuses (line-only segments)', () => {
     const a = translate({ ...baseInput, articulation: 0, spread: 0, scale: 0, iterations: 1 });
     const path = a.paths[0];
-    // Each cubic command's two controls should equal their adjacent ictus
-    // when articulation is 0.
-    const segments = path.match(/C (-?\d+\.\d+) (-?\d+\.\d+), (-?\d+\.\d+) (-?\d+\.\d+), (-?\d+\.\d+) (-?\d+\.\d+)/g);
+    const segments = path.match(
+      /C (-?\d+\.\d+) (-?\d+\.\d+), (-?\d+\.\d+) (-?\d+\.\d+), (-?\d+\.\d+) (-?\d+\.\d+)/g,
+    );
     expect(segments).not.toBeNull();
     expect(segments!.length).toBe(baseInput.ictuses.length);
-    // Pull first segment, check c1 == start ictus and c2 == end ictus.
-    const first = segments![0].match(/C (-?\d+\.\d+) (-?\d+\.\d+), (-?\d+\.\d+) (-?\d+\.\d+), (-?\d+\.\d+) (-?\d+\.\d+)/)!;
+    const first = segments![0].match(
+      /C (-?\d+\.\d+) (-?\d+\.\d+), (-?\d+\.\d+) (-?\d+\.\d+), (-?\d+\.\d+) (-?\d+\.\d+)/,
+    )!;
     const i0 = baseInput.ictuses[0];
     const i1 = baseInput.ictuses[1];
     expect(parseFloat(first[1])).toBeCloseTo(i0[0], 4);
@@ -83,6 +84,48 @@ describe('translate', () => {
     const sharp = translate({ ...baseInput, articulation: 0 });
     const smooth = translate({ ...baseInput, articulation: 1 });
     expect(sharp.paths).not.toEqual(smooth.paths);
+  });
+
+  it('per-segment articulation: array of [0,1,...] only smooths the segments at index 1', () => {
+    // 4/4 has 4 ictuses → 4 segments. Pass [0, 1, 0, 0]: only segment 1
+    // (between ictuses[1] and ictuses[2]) keeps its full curve; the others
+    // collapse to straight lines.
+    const a = translate({
+      ...baseInput,
+      articulation: [0, 1, 0, 0],
+      spread: 0,
+      scale: 0,
+      iterations: 1,
+    });
+    const segments = a.paths[0].match(
+      /C (-?\d+\.\d+) (-?\d+\.\d+), (-?\d+\.\d+) (-?\d+\.\d+), (-?\d+\.\d+) (-?\d+\.\d+)/g,
+    )!;
+    const seg1 = segments[1].match(
+      /C (-?\d+\.\d+) (-?\d+\.\d+), (-?\d+\.\d+) (-?\d+\.\d+), (-?\d+\.\d+) (-?\d+\.\d+)/,
+    )!;
+    const seg2 = segments[2].match(
+      /C (-?\d+\.\d+) (-?\d+\.\d+), (-?\d+\.\d+) (-?\d+\.\d+), (-?\d+\.\d+) (-?\d+\.\d+)/,
+    )!;
+    // Segment 2 collapses: c1 == ictuses[2], c2 == ictuses[3].
+    const i2 = baseInput.ictuses[2];
+    const i3 = baseInput.ictuses[3];
+    expect(parseFloat(seg2[1])).toBeCloseTo(i2[0], 4);
+    expect(parseFloat(seg2[2])).toBeCloseTo(i2[1], 4);
+    expect(parseFloat(seg2[3])).toBeCloseTo(i3[0], 4);
+    expect(parseFloat(seg2[4])).toBeCloseTo(i3[1], 4);
+    // Segment 1 does NOT collapse: at least one of its control coordinates
+    // differs from its anchor ictus.
+    const i1 = baseInput.ictuses[1];
+    const c1Differs =
+      Math.abs(parseFloat(seg1[1]) - i1[0]) > 1e-3 ||
+      Math.abs(parseFloat(seg1[2]) - i1[1]) > 1e-3;
+    expect(c1Differs).toBe(true);
+  });
+
+  it('pivot=spineBase produces a different bbox than pivot=origin (with non-zero spread)', () => {
+    const origin = translate({ ...baseInput, pivot: [0, 0], spread: 60 });
+    const spine = translate({ ...baseInput, pivot: [0, 0.85], spread: 60 });
+    expect(origin.bbox).not.toEqual(spine.bbox);
   });
 
   it('every pattern has 2n controls for n ictuses', () => {

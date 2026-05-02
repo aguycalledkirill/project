@@ -26,10 +26,7 @@ export function AnimatedCanvas() {
 
     const pattern = PATTERNS[signature];
     const d = buildPath(
-      {
-        ictuses: pattern.ictuses as unknown as [number, number][],
-        controls: pattern.controls as unknown as [number, number][],
-      },
+      { ictuses: pattern.ictuses, controls: pattern.controls },
       articulation,
     );
 

@@ -1,9 +1,14 @@
 import clsx from 'clsx';
 import { PATTERNS, SIGNATURES } from '../lib/patterns';
-import type { Aspect } from '../store/useConductorStore';
+import { PALETTES, PALETTE_NAMES } from '../lib/palettes';
+import type { Aspect, Pivot } from '../store/useConductorStore';
 import { useConductorStore } from '../store/useConductorStore';
 
 const ASPECTS: Aspect[] = ['1:1', '3:1', '4:5', '9:16'];
+const PIVOTS: { value: Pivot; label: string }[] = [
+  { value: 'origin', label: 'Origin' },
+  { value: 'spineBase', label: 'Spine' },
+];
 
 const labelClass =
   "font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-ink";
@@ -115,6 +120,30 @@ export function ControlPanel() {
       </Section>
 
       <Section>
+        <Header title="Pivot" />
+        <div className="grid grid-cols-2 gap-2">
+          {PIVOTS.map((p) => {
+            const active = s.pivot === p.value;
+            return (
+              <button
+                key={p.value}
+                type="button"
+                onClick={() => s.setPivot(p.value)}
+                className={clsx(
+                  'border px-3 py-1.5 font-mono text-[12px] tracking-[0.06em] transition-colors',
+                  active
+                    ? 'border-ink bg-ink text-paper'
+                    : 'border-rule text-ink hover:border-ink',
+                )}
+              >
+                {p.label}
+              </button>
+            );
+          })}
+        </div>
+      </Section>
+
+      <Section>
         <Header title="Scale" value={s.scale.toFixed(2)} />
         <Slider min={0} max={0.6} step={0.01} value={s.scale} onChange={s.setScale} />
       </Section>
@@ -199,9 +228,49 @@ export function ControlPanel() {
       </Section>
 
       <Section>
+        <Header title="Palette" />
+        <div className="flex flex-col gap-2">
+          {PALETTE_NAMES.map((name) => {
+            const tokens = PALETTES[name][s.theme];
+            const active = s.palette === name;
+            return (
+              <button
+                key={name}
+                type="button"
+                onClick={() => s.setPalette(name)}
+                className={clsx(
+                  'flex items-center gap-3 border px-2 py-1.5 text-left transition-colors',
+                  active ? 'border-ink' : 'border-rule hover:border-ink',
+                )}
+              >
+                <span
+                  aria-hidden
+                  className="flex h-4 w-10 flex-none overflow-hidden border border-rule"
+                >
+                  <span style={{ backgroundColor: tokens.paper, flex: 1 }} />
+                  <span style={{ backgroundColor: tokens.ink, flex: 1 }} />
+                  <span style={{ backgroundColor: tokens.accent, flex: 1 }} />
+                </span>
+                <span className="font-mono text-[12px] tracking-[0.06em] text-ink">
+                  {name}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </Section>
+
+      <Section>
         <div className="flex items-center justify-between">
           <span className={labelClass}>Grid</span>
           <Checkbox checked={s.showGrid} onChange={s.setShowGrid} />
+        </div>
+        <div className="flex items-center justify-between">
+          <span className={labelClass}>Markers</span>
+          <Checkbox
+            checked={s.showIctusMarkers}
+            onChange={s.setShowIctusMarkers}
+          />
         </div>
         <div className="flex items-center justify-between">
           <span className={labelClass}>Animation</span>

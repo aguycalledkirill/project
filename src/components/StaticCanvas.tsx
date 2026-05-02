@@ -2,6 +2,7 @@ import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { PATTERNS } from '../lib/patterns';
 import { translate } from '../lib/translator';
+import type { Vec2 } from '../lib/types';
 import type { Aspect } from '../store/useConductorStore';
 import { useConductorStore } from '../store/useConductorStore';
 
@@ -13,6 +14,9 @@ const ASPECT_CLASS: Record<Aspect, string> = {
 };
 
 const GRID_DOTS = 24;
+const SPINE_BASE: Vec2 = [0, 0.85];
+const ORIGIN: Vec2 = [0, 0];
+const MARKER_HALF_LEN = 0.022; // viewBox-units half-length of each marker arm
 
 interface StaticCanvasProps {
   className?: string;
@@ -26,10 +30,12 @@ export const StaticCanvas = forwardRef<SVGSVGElement, StaticCanvasProps>(
     const spread = useConductorStore((s) => s.spread);
     const scale = useConductorStore((s) => s.scale);
     const articulation = useConductorStore((s) => s.articulation);
+    const pivotMode = useConductorStore((s) => s.pivot);
     const strokeWidth = useConductorStore((s) => s.strokeWidth);
     const seed = useConductorStore((s) => s.seed);
     const aspect = useConductorStore((s) => s.aspect);
     const showGrid = useConductorStore((s) => s.showGrid);
+    const showIctusMarkers = useConductorStore((s) => s.showIctusMarkers);
     const accentLast = useConductorStore((s) => s.accentLast);
 
     const wrapperRef = useRef<HTMLDivElement | null>(null);
@@ -48,19 +54,24 @@ export const StaticCanvas = forwardRef<SVGSVGElement, StaticCanvasProps>(
       return () => ro.disconnect();
     }, []);
 
-    const output = useMemo(() => {
-      const pattern = PATTERNS[signature];
-      return translate({
-        ictuses: pattern.ictuses as unknown as [number, number][],
-        controls: pattern.controls as unknown as [number, number][],
-        iterations,
-        variation,
-        spread,
-        scale,
-        articulation,
-        seed,
-      });
-    }, [signature, iterations, variation, spread, scale, articulation, seed]);
+    const pattern = PATTERNS[signature];
+    const pivot: Vec2 = pivotMode === 'spineBase' ? SPINE_BASE : ORIGIN;
+
+    const output = useMemo(
+      () =>
+        translate({
+          ictuses: pattern.ictuses,
+          controls: pattern.controls,
+          iterations,
+          variation,
+          spread,
+          scale,
+          articulation,
+          pivot,
+          seed,
+        }),
+      [pattern, iterations, variation, spread, scale, articulation, pivot, seed],
+    );
 
     const vbStrokeWidth = (strokeWidth / canvasPx) * 2;
 
@@ -114,11 +125,35 @@ export const StaticCanvas = forwardRef<SVGSVGElement, StaticCanvasProps>(
                   key={i}
                   d={d}
                   stroke={isAccent ? 'var(--accent)' : 'var(--ink)'}
-                  strokeWidth={isAccent ? vbStrokeWidth * 1.4 : vbStrokeWidth}
                 />
               );
             })}
           </g>
+          {showIctusMarkers && (
+            <g
+              data-role="markers"
+              stroke="var(--ink)"
+              strokeWidth={vbStrokeWidth}
+              strokeLinecap="round"
+            >
+              {pattern.ictuses.map((p, i) => (
+                <g key={i}>
+                  <line
+                    x1={p[0] - MARKER_HALF_LEN}
+                    y1={p[1]}
+                    x2={p[0] + MARKER_HALF_LEN}
+                    y2={p[1]}
+                  />
+                  <line
+                    x1={p[0]}
+                    y1={p[1] - MARKER_HALF_LEN}
+                    x2={p[0]}
+                    y2={p[1] + MARKER_HALF_LEN}
+                  />
+                </g>
+              ))}
+            </g>
+          )}
         </svg>
       </div>
     );
