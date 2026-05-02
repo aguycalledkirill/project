@@ -196,72 +196,127 @@ export const PATTERNS = {
     ],
   },
 
-  // 9/8 — compound triple. Three main pulses (triangle skeleton) with one
-  // subsidiary flick on each main arc. The shape is a soft scalloped
-  // triangle — clearly three large pulses, each with its own gentle hump.
+  // 9/8 — slow-tempo "in 9", subdivided. After Schroeder/Saito-style
+  // textbook diagrams (cf. textbook Fig. 7): a vertical SPINE from prep
+  // top down to the downbeat, then a row of small SCALLOP arcs across
+  // the bottom marking each eighth-note pulse, then a series of small
+  // RISING BUMPS up the right side back to the start. Total 9 pulses
+  // (1 downbeat at the spine base + 5 lateral subdivisions + 3 rising
+  // subdivisions). The first knot K0 is the prep position at top-center
+  // — included so the spine and the closing arc render distinctly.
   '9/8': {
     label: '9/8',
-    description: 'Compound triple · Three main pulses',
-    beats: 3,
+    description: 'Subdivided · 9 eighth-note pulses',
+    beats: 9,
     ictuses: [
-      [0.0, 0.7],
-      [0.4, 0.55],
-      [0.65, 0.5],
-      [0.6, 0.0],
-      [0.0, -0.7],
-      [-0.15, 0.05],
+      [0.0, -0.85], // K0 — prep top, start of loop
+      [0.0, 0.85], // K1 — pulse 1, downbeat (spine base)
+      [-0.25, 0.85], // K2 — pulse 2 (left scallop)
+      [-0.5, 0.85], // K3 — pulse 3
+      [-0.7, 0.85], // K4 — pulse 4 (leftmost)
+      [-0.15, 0.85], // K5 — pulse 5 (sweeping back right)
+      [0.4, 0.85], // K6 — pulse 6 (continuing right)
+      [0.6, 0.5], // K7 — pulse 7 (rising bump)
+      [0.6, 0.05], // K8 — pulse 8
+      [0.45, -0.45], // K9 — pulse 9 (final bump near top)
     ],
     controls: [
-      [0.18, 0.72],
-      [0.32, 0.6],
-      [0.5, 0.55],
-      [0.62, 0.5],
-      [0.72, 0.35],
-      [0.65, 0.15],
-      [0.55, -0.2],
-      [0.3, -0.6],
-      [-0.18, -0.55],
-      [-0.2, -0.3],
-      [-0.18, 0.35],
-      [-0.08, 0.6],
+      // K0 → K1 (spine, straight down)
+      [0.0, -0.4],
+      [0.0, 0.4],
+      // K1 → K2 (scallop left, bow up)
+      [-0.05, 0.55],
+      [-0.2, 0.55],
+      // K2 → K3
+      [-0.3, 0.55],
+      [-0.45, 0.55],
+      // K3 → K4
+      [-0.55, 0.55],
+      [-0.65, 0.55],
+      // K4 → K5 (long sweep back right, bow up higher)
+      [-0.6, 0.45],
+      [-0.25, 0.45],
+      // K5 → K6 (continuing scallop right)
+      [0.05, 0.55],
+      [0.3, 0.55],
+      // K6 → K7 (transition into rising bumps)
+      [0.55, 0.78],
+      [0.62, 0.65],
+      // K7 → K8 (rising bump)
+      [0.7, 0.35],
+      [0.7, 0.2],
+      // K8 → K9 (rising bump)
+      [0.62, -0.15],
+      [0.55, -0.35],
+      // K9 → K0 (closing arc back to prep)
+      [0.3, -0.65],
+      [0.1, -0.82],
     ],
   },
 
-  // 12/8 — compound quadruple. Four main pulses (4/4 skeleton). Each big
-  // arc carries a subtle flick at its midpoint to suggest the three-eighth
-  // subdivision feel without cluttering the figure. Reads architecturally
-  // like a 4-pattern with bounce.
+  // 12/8 — slow-tempo "in 12", subdivided. Same architectural shape as
+  // the 9/8 subdivision (cf. textbook Fig. 8) but with more lateral
+  // scallops and one more rising bump. Total 12 pulses (1 downbeat + 7
+  // lateral + 4 rising).
   '12/8': {
     label: '12/8',
-    description: 'Compound quadruple · Four main pulses',
-    beats: 4,
+    description: 'Subdivided · 12 eighth-note pulses',
+    beats: 12,
     ictuses: [
-      [0.0, 0.7],
-      [-0.4, 0.65],
-      [-0.65, 0.55],
-      [0.0, 0.35],
-      [0.65, 0.55],
-      [0.55, 0.0],
-      [0.0, -0.7],
-      [-0.18, 0.05],
+      [0.0, -0.85], // K0 — prep top
+      [0.0, 0.85], // K1 — pulse 1, downbeat
+      [-0.2, 0.85], // K2 — pulse 2
+      [-0.4, 0.85], // K3 — pulse 3
+      [-0.6, 0.85], // K4 — pulse 4 (leftmost)
+      [-0.3, 0.85], // K5 — pulse 5 (returning right)
+      [0.0, 0.85], // K6 — pulse 6
+      [0.3, 0.85], // K7 — pulse 7
+      [0.55, 0.85], // K8 — pulse 8 (rightmost on bottom)
+      [0.7, 0.5], // K9 — pulse 9 (rising bump)
+      [0.7, 0.1], // K10 — pulse 10
+      [0.6, -0.3], // K11 — pulse 11
+      [0.4, -0.6], // K12 — pulse 12 (near top)
     ],
     controls: [
-      [-0.15, 0.72],
-      [-0.28, 0.7],
-      [-0.5, 0.62],
-      [-0.6, 0.58],
-      [-0.5, 0.4],
-      [-0.2, 0.35],
-      [0.2, 0.35],
-      [0.5, 0.4],
-      [0.7, 0.45],
-      [0.65, 0.25],
-      [0.6, -0.15],
-      [0.35, -0.55],
-      [-0.18, -0.55],
-      [-0.22, -0.3],
-      [-0.2, 0.35],
-      [-0.1, 0.6],
+      // K0 → K1 (spine)
+      [0.0, -0.4],
+      [0.0, 0.4],
+      // K1 → K2
+      [-0.05, 0.55],
+      [-0.15, 0.55],
+      // K2 → K3
+      [-0.25, 0.55],
+      [-0.35, 0.55],
+      // K3 → K4
+      [-0.45, 0.55],
+      [-0.55, 0.55],
+      // K4 → K5 (long sweep right, bow up higher)
+      [-0.55, 0.45],
+      [-0.35, 0.45],
+      // K5 → K6
+      [-0.2, 0.55],
+      [-0.1, 0.55],
+      // K6 → K7
+      [0.1, 0.55],
+      [0.2, 0.55],
+      // K7 → K8
+      [0.35, 0.55],
+      [0.5, 0.55],
+      // K8 → K9 (transition into rising)
+      [0.65, 0.78],
+      [0.72, 0.65],
+      // K9 → K10
+      [0.78, 0.4],
+      [0.78, 0.25],
+      // K10 → K11
+      [0.7, -0.05],
+      [0.65, -0.2],
+      // K11 → K12
+      [0.55, -0.45],
+      [0.48, -0.55],
+      // K12 → K0 (closing)
+      [0.25, -0.7],
+      [0.1, -0.82],
     ],
   },
 } as const satisfies Record<string, Pattern>;
