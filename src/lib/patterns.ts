@@ -197,13 +197,20 @@ export const PATTERNS = {
   },
 
   // 9/8 — slow-tempo "in 9", subdivided. After Schroeder/Saito-style
-  // textbook diagrams (cf. textbook Fig. 7): a vertical SPINE from prep
-  // top down to the downbeat, then a row of small SCALLOP arcs across
-  // the bottom marking each eighth-note pulse, then a series of small
-  // RISING BUMPS up the right side back to the start. Total 9 pulses
-  // (1 downbeat at the spine base + 5 lateral subdivisions + 3 rising
-  // subdivisions). The first knot K0 is the prep position at top-center
-  // — included so the spine and the closing arc render distinctly.
+  // textbook diagrams (cf. textbook Fig. 7): vertical SPINE down to the
+  // downbeat, then a row of small dome SCALLOPS across the bottom (one
+  // per eighth-note pulse), then small RISING TEETH up the right side
+  // back to the prep. 9 pulses total: 1 downbeat + 5 lateral + 3 rising.
+  //
+  // Geometry rules used here:
+  //   - Every bottom pulse sits on the line y = 0.85, evenly spaced
+  //     (~0.20 apart) so each scallop is a clear dome of width ~0.20
+  //     and height ~0.20 (peak at y = 0.65).
+  //   - Bottom-row controls always bow upward to y = 0.65.
+  //   - Rising teeth: each segment's controls are placed OUTSIDE the
+  //     straight line between its ictuses (right of the line for an
+  //     up-right-rising segment) so the segment reads as a distinct
+  //     tooth with a corner at every ictus.
   '9/8': {
     label: '9/8',
     description: 'Subdivided · 9 eighth-note pulses',
@@ -211,53 +218,54 @@ export const PATTERNS = {
     ictuses: [
       [0.0, -0.85], // K0 — prep top, start of loop
       [0.0, 0.85], // K1 — pulse 1, downbeat (spine base)
-      [-0.25, 0.85], // K2 — pulse 2 (left scallop)
-      [-0.5, 0.85], // K3 — pulse 3
-      [-0.7, 0.85], // K4 — pulse 4 (leftmost)
-      [-0.15, 0.85], // K5 — pulse 5 (sweeping back right)
-      [0.4, 0.85], // K6 — pulse 6 (continuing right)
-      [0.6, 0.5], // K7 — pulse 7 (rising bump)
-      [0.6, 0.05], // K8 — pulse 8
-      [0.45, -0.45], // K9 — pulse 9 (final bump near top)
+      [-0.22, 0.85], // K2 — pulse 2 (left scallop trough)
+      [-0.42, 0.85], // K3 — pulse 3
+      [-0.6, 0.85], // K4 — pulse 4 (leftmost)
+      [-0.32, 0.85], // K5 — pulse 5 (turn-back arch trough)
+      [-0.02, 0.85], // K6 — pulse 6 (back near center)
+      [0.3, 0.85], // K7 — pulse 7 (right bottom)
+      [0.55, 0.4], // K8 — pulse 8 (first rising tooth)
+      [0.4, -0.4], // K9 — pulse 9 (final tooth, upper-right)
     ],
     controls: [
-      // K0 → K1 (spine, straight down)
+      // K0 → K1 — spine, straight down
       [0.0, -0.4],
       [0.0, 0.4],
-      // K1 → K2 (scallop left, bow up)
-      [-0.05, 0.55],
-      [-0.2, 0.55],
+      // K1 → K2 — bottom dome scallop (peak ~y 0.65)
+      [-0.04, 0.65],
+      [-0.18, 0.65],
       // K2 → K3
-      [-0.3, 0.55],
-      [-0.45, 0.55],
+      [-0.26, 0.65],
+      [-0.38, 0.65],
       // K3 → K4
+      [-0.46, 0.65],
+      [-0.56, 0.65],
+      // K4 → K5 — turn-back arch (slightly taller, peak ~0.55)
       [-0.55, 0.55],
-      [-0.65, 0.55],
-      // K4 → K5 (long sweep back right, bow up higher)
-      [-0.6, 0.45],
-      [-0.25, 0.45],
-      // K5 → K6 (continuing scallop right)
-      [0.05, 0.55],
-      [0.3, 0.55],
-      // K6 → K7 (transition into rising bumps)
-      [0.55, 0.78],
-      [0.62, 0.65],
-      // K7 → K8 (rising bump)
-      [0.7, 0.35],
-      [0.7, 0.2],
-      // K8 → K9 (rising bump)
-      [0.62, -0.15],
-      [0.55, -0.35],
-      // K9 → K0 (closing arc back to prep)
-      [0.3, -0.65],
-      [0.1, -0.82],
+      [-0.37, 0.55],
+      // K5 → K6
+      [-0.27, 0.65],
+      [-0.07, 0.65],
+      // K6 → K7
+      [0.04, 0.65],
+      [0.24, 0.65],
+      // K7 → K8 — transition arc up-and-right; controls right of line
+      [0.42, 0.78],
+      [0.6, 0.55],
+      // K8 → K9 — rising tooth, controls bulged right of straight line
+      [0.62, 0.18],
+      [0.55, -0.2],
+      // K9 → K0 — closing arc back to prep
+      [0.25, -0.6],
+      [0.08, -0.82],
     ],
   },
 
   // 12/8 — slow-tempo "in 12", subdivided. Same architectural shape as
-  // the 9/8 subdivision (cf. textbook Fig. 8) but with more lateral
-  // scallops and one more rising bump. Total 12 pulses (1 downbeat + 7
-  // lateral + 4 rising).
+  // the 9/8 subdivision (cf. textbook Fig. 8): vertical spine down to
+  // the downbeat, scallops along the bottom going LEFT-then-RIGHT-back,
+  // then rising teeth up to the upper-right closure. 12 pulses total:
+  // 1 downbeat + 7 lateral (3 left + 1 turn + 3 right) + 4 rising.
   '12/8': {
     label: '12/8',
     description: 'Subdivided · 12 eighth-note pulses',
@@ -265,58 +273,58 @@ export const PATTERNS = {
     ictuses: [
       [0.0, -0.85], // K0 — prep top
       [0.0, 0.85], // K1 — pulse 1, downbeat
-      [-0.2, 0.85], // K2 — pulse 2
-      [-0.4, 0.85], // K3 — pulse 3
-      [-0.6, 0.85], // K4 — pulse 4 (leftmost)
-      [-0.3, 0.85], // K5 — pulse 5 (returning right)
-      [0.0, 0.85], // K6 — pulse 6
-      [0.3, 0.85], // K7 — pulse 7
-      [0.55, 0.85], // K8 — pulse 8 (rightmost on bottom)
-      [0.7, 0.5], // K9 — pulse 9 (rising bump)
-      [0.7, 0.1], // K10 — pulse 10
-      [0.6, -0.3], // K11 — pulse 11
-      [0.4, -0.6], // K12 — pulse 12 (near top)
+      [-0.18, 0.85], // K2 — pulse 2 (left scallop 1)
+      [-0.36, 0.85], // K3 — pulse 3
+      [-0.55, 0.85], // K4 — pulse 4 (leftmost)
+      [-0.3, 0.85], // K5 — pulse 5 (turn-back arch)
+      [-0.05, 0.85], // K6 — pulse 6 (back through near-center)
+      [0.2, 0.85], // K7 — pulse 7
+      [0.45, 0.85], // K8 — pulse 8 (right bottom)
+      [0.6, 0.5], // K9 — pulse 9 (first rising tooth)
+      [0.65, 0.1], // K10 — pulse 10
+      [0.55, -0.3], // K11 — pulse 11
+      [0.35, -0.6], // K12 — pulse 12 (near top, upper-right)
     ],
     controls: [
-      // K0 → K1 (spine)
+      // K0 → K1 — spine
       [0.0, -0.4],
       [0.0, 0.4],
       // K1 → K2
-      [-0.05, 0.55],
-      [-0.15, 0.55],
+      [-0.04, 0.65],
+      [-0.14, 0.65],
       // K2 → K3
-      [-0.25, 0.55],
-      [-0.35, 0.55],
+      [-0.22, 0.65],
+      [-0.32, 0.65],
       // K3 → K4
-      [-0.45, 0.55],
-      [-0.55, 0.55],
-      // K4 → K5 (long sweep right, bow up higher)
-      [-0.55, 0.45],
-      [-0.35, 0.45],
+      [-0.4, 0.65],
+      [-0.51, 0.65],
+      // K4 → K5 — turn-back arch (slightly taller)
+      [-0.5, 0.55],
+      [-0.35, 0.55],
       // K5 → K6
-      [-0.2, 0.55],
-      [-0.1, 0.55],
+      [-0.25, 0.65],
+      [-0.1, 0.65],
       // K6 → K7
-      [0.1, 0.55],
-      [0.2, 0.55],
+      [-0.0, 0.65],
+      [0.15, 0.65],
       // K7 → K8
-      [0.35, 0.55],
-      [0.5, 0.55],
-      // K8 → K9 (transition into rising)
-      [0.65, 0.78],
-      [0.72, 0.65],
-      // K9 → K10
-      [0.78, 0.4],
-      [0.78, 0.25],
+      [0.25, 0.65],
+      [0.4, 0.65],
+      // K8 → K9 — transition into rise; controls right of straight line
+      [0.55, 0.78],
+      [0.65, 0.62],
+      // K9 → K10 — rising tooth
+      [0.7, 0.4],
+      [0.72, 0.22],
       // K10 → K11
       [0.7, -0.05],
-      [0.65, -0.2],
+      [0.62, -0.2],
       // K11 → K12
-      [0.55, -0.45],
-      [0.48, -0.55],
-      // K12 → K0 (closing)
-      [0.25, -0.7],
-      [0.1, -0.82],
+      [0.55, -0.42],
+      [0.45, -0.55],
+      // K12 → K0 — closing arc to prep
+      [0.2, -0.7],
+      [0.06, -0.83],
     ],
   },
 } as const satisfies Record<string, Pattern>;
